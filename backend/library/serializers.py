@@ -38,3 +38,17 @@ class BookingSerializer(serializers.ModelSerializer):
         if attrs["start_date"] < timezone.localdate() or attrs["end_date"] < attrs["start_date"]:
             raise serializers.ValidationError("Choose a valid date range starting today or later.")
         return attrs
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source="booking.borrower.username", read_only=True)
+    item_title = serializers.CharField(source="booking.item.title", read_only=True)
+    class Meta:
+        model = Review
+        fields = ["id", "booking", "rating", "comment", "author", "item_title", "created_at"]
+        read_only_fields = ["created_at"]
+    def validate_booking(self, booking):
+        if booking.borrower_id != self.context["request"].user.id:
+            raise serializers.ValidationError("Only the borrower can review this booking.")
+        if booking.status != Booking.Status.RETURNED:
+            raise serializers.ValidationError("Return the item before leaving a review.")
+        return booking
