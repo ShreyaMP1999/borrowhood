@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.sqlite3
+media/
+node_modules/
+dist/
+.angular/
+.DS_Store
+coverage/
