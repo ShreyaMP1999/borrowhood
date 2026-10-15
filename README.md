@@ -1,4 +1,4 @@
-# Borrowhood ✳
+# Borrowhood 
 
 **Borrow what you need. Share what you own.**
 
