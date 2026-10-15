@@ -31,3 +31,27 @@ class ItemViewSet(viewsets.ModelViewSet):
         if serializer.instance.owner_id != self.request.user.id:
             raise PermissionDenied("Only the owner can edit this listing.")
         serializer.save()
+
+from rest_framework import mixins
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import Booking
+from .serializers import BookingSerializer
+from .services import transition
+
+class BookingViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    serializer_class = BookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        return Booking.objects.filter(Q(borrower=self.request.user) | Q(item__owner=self.request.user)).select_related("item", "borrower", "review")
+    def perform_create(self, serializer):
+        serializer.save(borrower=self.request.user)
+    @action(detail=True, methods=["post"], url_path="transition")
+    def change_status(self, request, pk=None):
+        booking = self.get_object()
+        notes = request.data.get("return_notes", "")
+        if not isinstance(notes, str):
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Return notes must be text.")
+        updated = transition(booking.pk, request.user, request.data.get("action", ""), notes)
+        return Response(self.get_serializer(updated).data)

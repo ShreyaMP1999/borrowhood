@@ -17,3 +17,24 @@ class ItemSerializer(serializers.ModelSerializer):
         if image and image.size > 5 * 1024 * 1024:
             raise serializers.ValidationError("Images must be under 5 MB.")
         return image
+
+class BookingSerializer(serializers.ModelSerializer):
+    item_title = serializers.CharField(source="item.title", read_only=True)
+    owner = serializers.IntegerField(source="item.owner_id", read_only=True)
+    borrower_name = serializers.CharField(source="borrower.username", read_only=True)
+    reviewed = serializers.SerializerMethodField()
+    def get_reviewed(self, obj): return hasattr(obj, "review")
+    class Meta:
+        model = Booking
+        fields = ["id", "item", "item_title", "owner", "borrower", "borrower_name", "start_date", "end_date", "message", "status", "return_notes", "reviewed", "created_at"]
+        read_only_fields = ["borrower", "status", "return_notes", "created_at"]
+    def validate(self, attrs):
+        from django.utils import timezone
+        item = attrs["item"]
+        if not item.active:
+            raise serializers.ValidationError("This item is unavailable.")
+        if item.owner_id == self.context["request"].user.id:
+            raise serializers.ValidationError("You cannot borrow your own item.")
+        if attrs["start_date"] < timezone.localdate() or attrs["end_date"] < attrs["start_date"]:
+            raise serializers.ValidationError("Choose a valid date range starting today or later.")
+        return attrs
