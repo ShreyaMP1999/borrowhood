@@ -1,6 +1,13 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import CategoryViewSet, ItemViewSet, BookingViewSet, ReviewViewSet, dashboard
+from .views import (
+    CategoryViewSet,
+    ItemViewSet,
+    BookingViewSet,
+    ReviewViewSet,
+    dashboard,
+)
+
 router = DefaultRouter()
 router.register("categories", CategoryViewSet)
 router.register("items", ItemViewSet, basename="item")
